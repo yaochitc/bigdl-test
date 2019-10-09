@@ -21,10 +21,10 @@ object Example {
     val featureDim = 5
     val vocabSize = 20
 
-    val batchSize = 2
+    val batchSize = 10
     val learningRate = 0.01
     val learningRateDecay = 0.001
-    val maxEpoches = 20
+    val maxEpoches = 50
 
 
     val sampleRDD = getSamples

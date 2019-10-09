@@ -53,9 +53,6 @@ class WeightedMerge[T: ClassTag](size: Int)
   override def updateGradInput(input: Tensor[T], gradOutput: Tensor[T]): Tensor[T] = {
     val nElement = gradInput.nElement()
     gradInput.resizeAs(input)
-    if (nElement != gradInput.nElement()) {
-      gradInput.zero()
-    }
     val (nFrame, dim, stride) = (input.size(1), input.size(2), input.size(3))
 
     val gradInputArray = gradInput.storage().array()
