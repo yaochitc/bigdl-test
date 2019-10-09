@@ -1,5 +1,6 @@
 package io.yaochi.model
 
+import com.intel.analytics.bigdl.nn.Sigmoid
 import com.intel.analytics.bigdl.tensor.TensorNumericMath.TensorNumeric
 import com.intel.analytics.bigdl.utils.Shape
 import com.intel.analytics.zoo.pipeline.api.keras.layers._
@@ -17,7 +18,7 @@ class ExampleModel[T: ClassTag](featureNum: Int,
     val wordEmbedding = Embedding[T](vocabSize, featureDim).inputs(input)
 
     val merged = new KerasLayerWrapper[T](new WeightedMerge[T](featureNum)).inputs(wordEmbedding)
-    val logits = Dense[T](1, activation = "sigmoid").inputs(merged)
+    val logits = new KerasLayerWrapper[T](Sigmoid[T]()).inputs(merged)
     Model[T](input, logits)
   }
 }

@@ -18,7 +18,7 @@ object Example {
     Logger.getLogger("com.intel.analytics.bigdl.optim").setLevel(Level.INFO)
 
     val featureNum = 2
-    val featureDim = 5
+    val featureDim = 1
     val vocabSize = 20
 
     val batchSize = 10
