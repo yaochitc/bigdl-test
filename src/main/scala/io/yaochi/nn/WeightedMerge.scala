@@ -33,18 +33,22 @@ class WeightedMerge[T: ClassTag](size: Int)
     val scaleSum = scales.reduceLeft((a, b) => ev.plus(a, b))
     val normScales = scales.map(scale => ev.divide(scale, scaleSum))
 
-    var t = 0
-    while (t < stride * nFrame) {
-      val inputOffset = (t / stride) * dim * stride + t % stride + storageOffset
-      val outputOffset = (t / stride) * dim * stride + t % stride
-
+    var i = 0
+    while (i < nFrame) {
       var d = 0
       while (d < dim) {
-        val z = ev.times(inputArray(d * stride + inputOffset), normScales(d))
-        outputArray(outputOffset) = ev.plus(outputArray(outputOffset), z)
+        var j = 0
+        while (j < stride) {
+          val inputOffset = i * dim * stride + d * stride + j + storageOffset
+          val outputOffset = i * stride + j
+
+          val z = ev.times(inputArray(inputOffset), normScales(d))
+          outputArray(outputOffset) = ev.plus(outputArray(outputOffset), z)
+          j += 1
+        }
         d += 1
       }
-      t += 1
+      i += 1
     }
 
     output
@@ -67,17 +71,21 @@ class WeightedMerge[T: ClassTag](size: Int)
     val normScales = scales.map(scale => ev.divide(scale, scaleSum))
     val squareNormScales = normScales.map(scale => ev.times(scale, scale))
 
-    var t = 0
-    while (t < stride * nFrame) {
-      val gradInputOffset = (t / stride) * dim * stride + t % stride
-      val gradOutputOffset = (t / stride) * dim * stride + t % stride
-
+    var i = 0
+    while (i < nFrame) {
       var d = 0
       while (d < dim) {
-        gradInputArray(d * stride + gradInputOffset) = ev.times(gradOutputArray(gradOutputOffset), squareNormScales(d))
+        var j = 0
+        while (j < stride) {
+          val gradInputOffset = i * dim * stride + d * stride + j
+          val gradOutputOffset = i * stride + j
+
+          gradInputArray(gradInputOffset) = ev.times(gradOutputArray(gradOutputOffset), squareNormScales(d))
+          j += 1
+        }
         d += 1
       }
-      t += 1
+      i += 1
     }
 
     gradInput
@@ -107,18 +115,22 @@ class WeightedMerge[T: ClassTag](size: Int)
     val normScales = scales.map(scale => ev.divide(scale, scaleSum))
     val squareNormScales = normScales.map(scale => ev.times(scale, scale))
 
-    var t = 0
-    while (t < stride * nFrame) {
-      val inputOffset = (t / stride) * dim * stride + t % stride + storageOffset
-      val gradOutputOffset = (t / stride) * dim * stride + t % stride
-
+    var i = 0
+    while (i < nFrame) {
       var d = 0
       while (d < dim) {
-        val z = ev.times(inputArray(d * stride + inputOffset), ev.times(gradOutputArray(gradOutputOffset), squareNormScales(d)))
-        gradWeightArray(d + gradWeightOffset) = ev.plus(gradWeightArray(d + gradWeightOffset), z)
+        var j = 0
+        while (j < stride) {
+          val inputOffset = i * dim * stride + d * stride + j + storageOffset
+          val gradOutputOffset = i * stride + j
+
+          val z = ev.times(inputArray(inputOffset), ev.times(gradOutputArray(gradOutputOffset), squareNormScales(d)))
+          gradWeightArray(gradWeightOffset) = ev.plus(gradWeightArray(gradWeightOffset), z)
+          j += 1
+        }
         d += 1
       }
-      t += 1
+      i += 1
     }
   }
 

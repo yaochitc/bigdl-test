@@ -2,7 +2,7 @@ package io.yaochi
 
 import com.intel.analytics.bigdl.dataset.Sample
 import com.intel.analytics.bigdl.nn.BCECriterion
-import com.intel.analytics.bigdl.optim.{Adam, Optimizer}
+import com.intel.analytics.bigdl.optim.{Adam, Optimizer, Trigger}
 import com.intel.analytics.bigdl.tensor.Tensor
 import com.intel.analytics.bigdl.utils.Engine
 import io.yaochi.model.ExampleModel
@@ -22,9 +22,9 @@ object Example {
     val vocabSize = 20
 
     val batchSize = 10
-    val learningRate = 0.01
+    val learningRate = 0.05
     val learningRateDecay = 0.001
-    val maxEpoches = 50
+    val maxEpoches = 500
 
 
     val sampleRDD = getSamples
@@ -36,7 +36,7 @@ object Example {
       BCECriterion[Float](),
       batchSize
     ).setOptimMethod(new Adam(learningRate = learningRate, learningRateDecay))
-
+      .setEndWhen(Trigger.maxEpoch(maxEpoches))
     optimizzer.optimize()
   }
 
