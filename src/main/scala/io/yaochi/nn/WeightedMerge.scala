@@ -59,21 +59,25 @@ class WeightedMerge[T: ClassTag](size: Int)
     val (nFrame, dim, stride) = (input.size(1), input.size(2), input.size(3))
 
     val gradInputArray = gradInput.storage().array()
-    val outputArray = if (output.isContiguous()) {
-      output.storage().array()
-    } else {
-      output.contiguous().storage().array()
-    }
     val gradOutputArray = if (gradOutput.isContiguous()) {
       gradOutput.storage().array()
     } else {
       gradOutput.contiguous().storage().array()
     }
 
+    val scales = (1 to size).map(i => ev.exp(weight.valueAt(i)))
+    val scaleSum = scales.reduceLeft((a, b) => ev.plus(a, b))
+    val normScales = scales.map(scale => ev.divide(scale, scaleSum))
+    val squareNormScales = normScales.map(scale => ev.times(scale, scale))
+
     var t = 0
     while (t < stride * nFrame) {
+      val gradInputOffset = (t / stride) * dim * stride + t % stride
+      val gradOutputOffset = (t / stride) * dim * stride + t % stride
+
       var d = 0
       while (d < dim) {
+        gradInputArray(d * stride + gradInputOffset) = ev.times(gradOutputArray(gradOutputOffset), squareNormScales(d))
         d += 1
       }
       t += 1
@@ -84,17 +88,40 @@ class WeightedMerge[T: ClassTag](size: Int)
 
 
   override def accGradParameters(input: Tensor[T], gradOutput: Tensor[T]): Unit = {
+    gradWeight.resize(size)
     val (nFrame, dim, stride) = (input.size(1), input.size(2), input.size(3))
 
-    val outputArray = if (output.isContiguous()) {
-      output.storage().array()
+    val inputArray = if (input.isContiguous()) {
+      input.storage().array()
     } else {
-      output.contiguous().storage().array()
+      input.contiguous().storage().array()
     }
+    val gradWeightArray = gradWeight.storage().array()
+    val gradWeightOffset = gradWeight.storageOffset() - 1
     val gradOutputArray = if (gradOutput.isContiguous()) {
       gradOutput.storage().array()
     } else {
       gradOutput.contiguous().storage().array()
+    }
+    val storageOffset = input.storageOffset() - 1
+
+    val scales = (1 to size).map(i => ev.exp(weight.valueAt(i)))
+    val scaleSum = scales.reduceLeft((a, b) => ev.plus(a, b))
+    val normScales = scales.map(scale => ev.divide(scale, scaleSum))
+    val squareNormScales = normScales.map(scale => ev.times(scale, scale))
+
+    var t = 0
+    while (t < stride * nFrame) {
+      val inputOffset = (t / stride) * dim * stride + t % stride + storageOffset
+      val gradOutputOffset = (t / stride) * dim * stride + t % stride
+
+      var d = 0
+      while (d < dim) {
+        val z = ev.times(inputArray(d * stride + inputOffset), ev.times(gradOutputArray(gradOutputOffset), squareNormScales(d)))
+        gradWeightArray(d + gradWeightOffset) = ev.plus(gradWeightArray(d + gradWeightOffset), z)
+        d += 1
+      }
+      t += 1
     }
   }
 
