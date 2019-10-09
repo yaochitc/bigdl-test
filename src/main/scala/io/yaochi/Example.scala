@@ -109,6 +109,8 @@ object Example {
   }
 
   def getSc: SparkContext = {
+    System.setProperty("bigdl.localMode", "true")
+    System.setProperty("bigdl.coreNumber", "1")
     var sparkConf = new SparkConf
     sparkConf.setMaster("local[2]")
     sparkConf.setAppName("example")

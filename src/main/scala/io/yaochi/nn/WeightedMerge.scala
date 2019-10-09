@@ -18,7 +18,7 @@ class WeightedMerge[T: ClassTag](size: Int)
       "3D tensor expected" +
         s"input dimension ${input.nDimension()}")
 
-    output.resize(input.size(1), input.size(3))
+    output.resize(input.size(1), input.size(3)).zero()
     val (nFrame, dim, stride) = (input.size(1), input.size(2), input.size(3))
 
     val outputArray = output.storage().array()
@@ -91,7 +91,6 @@ class WeightedMerge[T: ClassTag](size: Int)
 
     gradInput
   }
-
 
   override def accGradParameters(input: Tensor[T], gradOutput: Tensor[T]): Unit = {
     gradWeight.resize(size)

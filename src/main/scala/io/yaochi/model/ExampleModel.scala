@@ -1,6 +1,6 @@
 package io.yaochi.model
 
-import com.intel.analytics.bigdl.nn.{LookupTable, Sequential, Sigmoid}
+import com.intel.analytics.bigdl.nn.{LookupTable, Mean, Sequential, Sigmoid}
 import com.intel.analytics.bigdl.tensor.TensorNumericMath.TensorNumeric
 import io.yaochi.nn.WeightedMerge
 
