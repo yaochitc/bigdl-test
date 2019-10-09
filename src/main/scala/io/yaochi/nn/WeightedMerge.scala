@@ -3,26 +3,20 @@ package io.yaochi.nn
 import com.intel.analytics.bigdl.nn.abstractnn.TensorModule
 import com.intel.analytics.bigdl.tensor.Tensor
 import com.intel.analytics.bigdl.tensor.TensorNumericMath.TensorNumeric
-import com.intel.analytics.bigdl.utils.Shape
 
 import scala.reflect.ClassTag
 
-class WeightedMerge[T: ClassTag]()
+class WeightedMerge[T: ClassTag](size: Int)
                                 (implicit ev: TensorNumeric[T]) extends TensorModule[T] {
+  val weight: Tensor[T] = Tensor[T](size)
+
+  val gradWeight: Tensor[T] = Tensor[T](size)
+
   override def updateOutput(input: Tensor[T]): Tensor[T] = {
-    require(1 <= input.nDimension() && input.nDimension() <= 4,
-      "1D, 2D, 3D or 4D tensor expected" +
+    require(input.nDimension() == 3,
+      "3D tensor expected" +
         s"input dimension ${input.nDimension()}")
-    val (nFrame, stride) = if (input.nDimension() == 1) {
-      (1, 1)
-    } else if (input.nDimension() == 2) {
-      (input.size(1), 1)
-    } else if (input.nDimension() == 3) {
-      (1, input.size(2) * input.size(3))
-    } else {
-      (input.size(1), input.size(3) * input.size(4))
-    }
-    output.resizeAs(input)
+    output.resize(input.size(1), input.size(3))
     WeightedMerge.updateOutput[T](input, output)
     output
   }
@@ -33,8 +27,8 @@ class WeightedMerge[T: ClassTag]()
     gradInput
   }
 
-  override def computeOutputShape(inputShape: Shape): Shape = {
-    inputShape
+
+  override def accGradParameters(input: Tensor[T], gradOutput: Tensor[T]): Unit = {
   }
 }
 
@@ -48,4 +42,5 @@ object WeightedMerge {
                                    gradInput: Tensor[T], output: Tensor[T])(implicit ev: TensorNumeric[T]): Tensor[T] = {
     null
   }
+
 }

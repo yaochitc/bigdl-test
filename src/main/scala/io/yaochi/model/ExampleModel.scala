@@ -16,7 +16,7 @@ class ExampleModel[T: ClassTag](featureNum: Int,
     val input = Input[T](inputShape = Shape(featureNum))
     val wordEmbedding = Embedding[T](vocabSize, featureDim).inputs(input)
 
-    val merged = new KerasLayerWrapper[T](new WeightedMerge[T]()).inputs(wordEmbedding)
+    val merged = new KerasLayerWrapper[T](new WeightedMerge[T](featureNum)).inputs(wordEmbedding)
     val logits = Dense[T](1).inputs(merged)
     Model[T](input, logits)
   }

@@ -6,11 +6,17 @@ import com.intel.analytics.bigdl.optim.{Adam, Optimizer}
 import com.intel.analytics.bigdl.tensor.Tensor
 import com.intel.analytics.bigdl.utils.Engine
 import io.yaochi.model.ExampleModel
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 
 object Example {
   def main(args: Array[String]): Unit = {
+    Logger.getLogger("org").setLevel(Level.ERROR)
+    Logger.getLogger("akka").setLevel(Level.ERROR)
+    Logger.getLogger("breeze").setLevel(Level.ERROR)
+    Logger.getLogger("com.intel.analytics.bigdl.optim").setLevel(Level.INFO)
+
     val featureNum = 2
     val featureDim = 5
     val vocabSize = 20
