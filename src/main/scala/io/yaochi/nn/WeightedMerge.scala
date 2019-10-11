@@ -1,11 +1,42 @@
 package io.yaochi.nn
 
-import com.intel.analytics.bigdl.nn.abstractnn.TensorModule
+import com.intel.analytics.bigdl.nn.abstractnn.{AbstractModule, TensorModule}
+import com.intel.analytics.bigdl.nn.keras.KerasLayer
 import com.intel.analytics.bigdl.tensor.Tensor
 import com.intel.analytics.bigdl.tensor.TensorNumericMath.TensorNumeric
-import com.intel.analytics.bigdl.utils.{T, Table}
+import com.intel.analytics.bigdl.utils.{Shape, SingleShape, T, Table}
 
 import scala.reflect.ClassTag
+
+class WeightedMergerLayer[T: ClassTag]
+(val inputShape: Shape = null)(implicit ev: TensorNumeric[T])
+  extends KerasLayer[Tensor[T], Tensor[T], T](WeightedMerge.addBatch(inputShape)) {
+
+  override def doBuild(inputShape: Shape): AbstractModule[Tensor[T], Tensor[T], T] = {
+    val input = inputShape.toSingle().toArray
+    new WeightedMerge[T](input(1))
+  }
+
+  override def clearState(): this.type = {
+    if (output.isInstanceOf[Tensor[_]]) {
+      output = Tensor[T]()
+    }
+
+    if (gradInput.isInstanceOf[Tensor[_]]) {
+      gradInput = Tensor[T]()
+    }
+
+    this
+  }
+
+  override def computeOutputShape(calcInputShape: Shape): Shape = {
+    val input = calcInputShape.toSingle().toArray
+    require(input.length == 3,
+      s"Embedding requires 3D input, but got input dim ${input.length}")
+    Shape(input(0), input(2))
+  }
+
+}
 
 class WeightedMerge[T: ClassTag](size: Int)
                                 (implicit ev: TensorNumeric[T]) extends TensorModule[T] {
@@ -167,5 +198,21 @@ class WeightedMerge[T: ClassTag](size: Int)
     hash = hash * seed + weight.hashCode()
 
     hash
+  }
+}
+
+object WeightedMerge {
+  def addBatch(shape: Shape): Shape = {
+    // simply return null here as null is the default value
+    if (shape == null) {
+      return null
+    }
+    if (shape.isInstanceOf[SingleShape]) {
+      Shape((List(-1) ++ shape.toSingle()).toArray)
+    } else {
+      Shape(shape.toMulti().map {
+        addBatch(_)
+      })
+    }
   }
 }
